@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - "report/source.html"
-      - "assets/cover.svg"
+      - "report/cover.html"
       - "RELEASE_NOTES.md"
       - ".github/workflows/publish-report.yml"
   workflow_dispatch:
@@ -19,6 +19,8 @@ concurrency:
 
 env:
   PDF_PATH: report/SolarWinds_Supply_Chain_Case_Study_Michel-DV.pdf
+  BODY_PDF: report/.body.generated.pdf
+  COVER_PDF: report/.cover.generated.pdf
 
 jobs:
   publish:
@@ -43,20 +45,59 @@ jobs:
           echo "Chrome/Chromium not found on runner" >&2
           exit 1
 
-      - name: Render PDF
+      - name: Render body and cover
         shell: bash
         run: |
           set -euo pipefail
           CHROME="${{ steps.chrome.outputs.bin }}"
-          SOURCE="file://$GITHUB_WORKSPACE/report/source.html"
           "$CHROME" \
             --headless=new \
             --no-sandbox \
             --disable-gpu \
             --allow-file-access-from-files \
             --no-pdf-header-footer \
-            --print-to-pdf="$GITHUB_WORKSPACE/$PDF_PATH" \
-            "$SOURCE"
+            --print-to-pdf="$GITHUB_WORKSPACE/$BODY_PDF" \
+            "file://$GITHUB_WORKSPACE/report/source.html"
+          "$CHROME" \
+            --headless=new \
+            --no-sandbox \
+            --disable-gpu \
+            --allow-file-access-from-files \
+            --no-pdf-header-footer \
+            --print-to-pdf="$GITHUB_WORKSPACE/$COVER_PDF" \
+            "file://$GITHUB_WORKSPACE/report/cover.html"
+          test -s "$BODY_PDF"
+          test -s "$COVER_PDF"
+
+      - name: Replace generated cover page
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet pypdf
+          python - <<'PY'
+          from pypdf import PdfReader, PdfWriter
+          from pathlib import Path
+
+          body_path = Path("report/.body.generated.pdf")
+          cover_path = Path("report/.cover.generated.pdf")
+          out_path = Path("report/SolarWinds_Supply_Chain_Case_Study_Michel-DV.pdf")
+
+          body = PdfReader(str(body_path))
+          cover = PdfReader(str(cover_path))
+          if len(body.pages) < 2:
+              raise SystemExit("Generated body PDF has fewer than 2 pages")
+          if len(cover.pages) < 1:
+              raise SystemExit("Generated cover PDF has no pages")
+
+          writer = PdfWriter()
+          writer.add_page(cover.pages[0])
+          for page in body.pages[1:]:
+              writer.add_page(page)
+
+          with out_path.open("wb") as f:
+              writer.write(f)
+          PY
+          rm -f "$BODY_PDF" "$COVER_PDF"
           test -s "$PDF_PATH"
 
       - name: Write integrity checksum
@@ -72,13 +113,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "M. D. V."
+          git config user.email "232046078+Michel-DV@users.noreply.github.com"
           git add "$PDF_PATH" report/SHA256SUMS.txt
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
-            git commit -m "release: publish SolarWinds case study v1.0.0"
+            git commit -m "release: repair SolarWinds PDF cover"
             git push origin HEAD:main
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
@@ -98,7 +139,7 @@ jobs:
             gh release create v1.0.0 \
               "$PDF_PATH#SolarWinds Supply-Chain Case Study PDF" \
               --target "$TARGET_SHA" \
-              --title "SolarWinds Supply-Chain Case Study — v1.0.0" \
+              --title "SolarWinds Supply-Chain Case Study - v1.0.0" \
               --notes-file RELEASE_NOTES.md
           fi
 
@@ -112,4 +153,5 @@ jobs:
             echo "- Release: \`v1.0.0\`"
             echo "- SHA-256: \`$(cut -d' ' -f1 report/SHA256SUMS.txt)\`"
             echo "- Author: \`@Michel-DV\`"
+            echo "- Cover: dedicated full-page vector cover"
           } >> "$GITHUB_STEP_SUMMARY"
