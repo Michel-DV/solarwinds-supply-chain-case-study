@@ -1,0 +1,115 @@
+name: Publish SolarWinds case study
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "report/source.html"
+      - "assets/cover.svg"
+      - "RELEASE_NOTES.md"
+      - ".github/workflows/publish-report.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: solarwinds-publication
+  cancel-in-progress: false
+
+env:
+  PDF_PATH: report/SolarWinds_Supply_Chain_Case_Study_Michel-DV.pdf
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout publication
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Locate Chrome
+        id: chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          for candidate in google-chrome-stable google-chrome chromium chromium-browser; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              echo "bin=$(command -v "$candidate")" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          echo "Chrome/Chromium not found on runner" >&2
+          exit 1
+
+      - name: Render PDF
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHROME="${{ steps.chrome.outputs.bin }}"
+          SOURCE="file://$GITHUB_WORKSPACE/report/source.html"
+          "$CHROME" \
+            --headless=new \
+            --no-sandbox \
+            --disable-gpu \
+            --allow-file-access-from-files \
+            --no-pdf-header-footer \
+            --print-to-pdf="$GITHUB_WORKSPACE/$PDF_PATH" \
+            "$SOURCE"
+          test -s "$PDF_PATH"
+
+      - name: Write integrity checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd report
+          sha256sum "$(basename "$PDF_PATH")" > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Commit generated publication
+        id: commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$PDF_PATH" report/SHA256SUMS.txt
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "release: publish SolarWinds case study v1.0.0"
+            git push origin HEAD:main
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Create or refresh v1.0.0 release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git fetch origin main --tags
+          TARGET_SHA=$(git rev-parse origin/main)
+          if gh release view v1.0.0 >/dev/null 2>&1; then
+            gh release upload v1.0.0 "$PDF_PATH#SolarWinds Supply-Chain Case Study PDF" --clobber
+          else
+            gh release create v1.0.0 \
+              "$PDF_PATH#SolarWinds Supply-Chain Case Study PDF" \
+              --target "$TARGET_SHA" \
+              --title "SolarWinds Supply-Chain Case Study — v1.0.0" \
+              --notes-file RELEASE_NOTES.md
+          fi
+
+      - name: Publication summary
+        shell: bash
+        run: |
+          {
+            echo "## SolarWinds publication"
+            echo
+            echo "- PDF: \`$PDF_PATH\`"
+            echo "- Release: \`v1.0.0\`"
+            echo "- SHA-256: \`$(cut -d' ' -f1 report/SHA256SUMS.txt)\`"
+            echo "- Author: \`@Michel-DV\`"
+          } >> "$GITHUB_STEP_SUMMARY"
