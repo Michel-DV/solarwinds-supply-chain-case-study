@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use this case study in research, training, coursework, or internal documentation, please cite it as below."
+title: "SolarWinds Supply-Chain Compromise: Technical Case Study"
+type: report
+version: 1.0.0
+date-released: 2026-09-14
+authors:
+  - name: "Michel-DV"
+    alias: "@Michel-DV"
+    website: "https://github.com/Michel-DV"
+repository-code: "https://github.com/Michel-DV/solarwinds-supply-chain-case-study"
+url: "https://github.com/Michel-DV/solarwinds-supply-chain-case-study/blob/main/report/SolarWinds_Supply_Chain_Case_Study_Michel-DV.pdf"
+license: "CC-BY-NC-ND-4.0"
+keywords:
+  - SolarWinds
+  - SUNBURST
+  - SUNSPOT
+  - APT29
+  - NOBELIUM
+  - software supply chain
+  - threat research
+  - incident response
+  - MITRE ATT&CK
+  - cyber espionage
+abstract: >-
+  Technical case study of the SolarWinds Orion software supply-chain compromise,
+  covering the build compromise, SUNSPOT, SUNBURST, selective victim promotion,
+  post-exploitation, identity and cloud activity, detection, remediation,
+  ATT&CK mapping, and defensive lessons.
