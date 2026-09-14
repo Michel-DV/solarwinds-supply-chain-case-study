@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/cover.svg" alt="SolarWinds Supply-Chain Compromise case study cover" width="760">
+  <img src="assets/cover-mobile-safe.svg" alt="SolarWinds Supply-Chain Compromise case study cover" width="760">
 
 # SolarWinds Supply-Chain Compromise
 
@@ -126,7 +126,8 @@ See [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) and [`docs/REFERENCES.md`](docs
 ├── .github/workflows/
 │   └── publish-report.yml
 ├── assets/
-│   └── cover.svg
+│   ├── cover.svg
+│   └── cover-mobile-safe.svg
 ├── docs/
 │   ├── METHODOLOGY.md
 │   └── REFERENCES.md
