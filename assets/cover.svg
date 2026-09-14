@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="760" viewBox="0 0 1600 760">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#07111c"/><stop offset="0.55" stop-color="#0b1824"/><stop offset="1" stop-color="#03070c"/></linearGradient>
+    <radialGradient id="red" cx="70%" cy="45%" r="50%"><stop offset="0" stop-color="#ef3340" stop-opacity=".42"/><stop offset="1" stop-color="#ef3340" stop-opacity="0"/></radialGradient>
+    <radialGradient id="blue" cx="25%" cy="30%" r="45%"><stop offset="0" stop-color="#24b9ff" stop-opacity=".28"/><stop offset="1" stop-color="#24b9ff" stop-opacity="0"/></radialGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <pattern id="grid" width="42" height="42" patternUnits="userSpaceOnUse"><path d="M42 0H0V42" fill="none" stroke="#6ea5bd" stroke-opacity=".07"/></pattern>
+  </defs>
+  <rect width="1600" height="760" fill="url(#bg)"/>
+  <rect width="1600" height="760" fill="url(#grid)"/>
+  <rect width="1600" height="760" fill="url(#blue)"/>
+  <rect width="1600" height="760" fill="url(#red)"/>
+
+  <g fill="none" stroke="#1fb8ff" stroke-opacity=".42" stroke-width="2">
+    <path d="M95 200 C330 62 560 115 790 268"/>
+    <path d="M152 310 C380 180 588 210 800 350"/>
+  </g>
+  <g fill="none" stroke="#ff3947" stroke-opacity=".65" stroke-width="2" filter="url(#glow)">
+    <path d="M800 268 C1040 82 1260 126 1508 214"/>
+    <path d="M800 350 C1065 215 1260 315 1490 430"/>
+    <path d="M803 350 C1010 515 1245 520 1510 620"/>
+  </g>
+  <g fill="#d8f3ff">
+    <circle cx="95" cy="200" r="5"/><circle cx="152" cy="310" r="4"/><circle cx="410" cy="120" r="4"/><circle cx="604" cy="210" r="5"/>
+  </g>
+  <g fill="#ff3b48" filter="url(#glow)">
+    <circle cx="800" cy="268" r="7"/><circle cx="800" cy="350" r="7"/><circle cx="1040" cy="164" r="5"/><circle cx="1250" cy="295" r="6"/><circle cx="1490" cy="430" r="5"/><circle cx="1310" cy="550" r="5"/>
+  </g>
+
+  <g transform="translate(660 168)">
+    <rect x="0" y="0" width="300" height="300" rx="22" fill="#0b1722" stroke="#6cd2ff" stroke-opacity=".55" stroke-width="2"/>
+    <rect x="18" y="18" width="264" height="264" rx="15" fill="#09121b"/>
+    <path d="M40 190 L260 190" stroke="#263c4b" stroke-width="9" stroke-linecap="round"/>
+    <path d="M40 190 L167 190" stroke="#47caff" stroke-width="9" stroke-linecap="round" filter="url(#glow)"/>
+    <text x="40" y="92" fill="#f5fbff" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="34" font-weight="700">TRUSTED UPDATE</text>
+    <text x="40" y="135" fill="#8db7ca" font-family="ui-monospace,Consolas,monospace" font-size="20">signed • verified • deployed</text>
+    <text x="40" y="234" fill="#ff4652" font-family="ui-monospace,Consolas,monospace" font-size="19">// hidden backdoor</text>
+  </g>
+
+  <text x="90" y="545" fill="#dff6ff" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="76" font-weight="800" letter-spacing="2">SOLARWINDS</text>
+  <text x="92" y="608" fill="#ff4652" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="31" font-weight="700" letter-spacing="6">SUPPLY-CHAIN COMPROMISE</text>
+  <text x="94" y="657" fill="#93adba" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="24" letter-spacing="2">WHEN TRUST BECAME THE ATTACK SURFACE.</text>
+
+  <text x="1510" y="92" text-anchor="end" fill="#7996a5" font-family="ui-monospace,Consolas,monospace" font-size="18" letter-spacing="3">TECHNICAL CASE STUDY</text>
+  <text x="1510" y="690" text-anchor="end" fill="#f6f8fa" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="22" font-weight="700">@MICHEL-DV</text>
+  <text x="1510" y="720" text-anchor="end" fill="#6f8997" font-family="ui-monospace,Consolas,monospace" font-size="16">CC BY-NC-ND 4.0 · 2026</text>
+</svg>
