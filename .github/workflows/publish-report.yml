@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "report/source.html"
+      - "report/analysis-v1.1.html"
       - "report/cover.html"
       - "RELEASE_NOTES.md"
       - ".github/workflows/publish-report.yml"
@@ -18,7 +19,9 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  RELEASE_TAG: v1.1.0
   PDF_PATH: report/SolarWinds_Supply_Chain_Case_Study_Michel-DV.pdf
+  ASSEMBLED_SOURCE: report/source-v1.1.html
   BODY_PDF: report/.body.generated.pdf
   COVER_PDF: report/.cover.generated.pdf
 
@@ -30,6 +33,38 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Assemble v1.1 publication source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          base_path = Path("report/source.html")
+          analysis_path = Path("report/analysis-v1.1.html")
+          out_path = Path("report/source-v1.1.html")
+
+          source = base_path.read_text(encoding="utf-8")
+          analysis = analysis_path.read_text(encoding="utf-8").strip()
+
+          marker = '''<section class="page">
+            <div class="section-head"><div class="eyebrow">Appendix</div><h1>14. Common myths, indicators and terminology</h1></div>'''
+          if marker not in source:
+              raise SystemExit("Appendix insertion marker not found")
+
+          source = source.replace(marker, analysis + "\n\n" + marker, 1)
+          source = source.replace("v1.0.0", "v1.1.0")
+          source = source.replace("14. Common myths, indicators and terminology", "17. Common myths, indicators and terminology")
+          source = source.replace("<span>@Michel-DV | Appendix</span><span>14</span>", "<span>@Michel-DV | Appendix</span><span>17</span>")
+          source = source.replace("15. Evidence trail", "18. Evidence trail")
+          source = source.replace("<strong>Version:</strong> 1.0.0", "<strong>Version:</strong> 1.1.0")
+          source = source.replace("<strong>Published:</strong> 14 September 2026", "<strong>Published:</strong> 15 September 2026")
+
+          out_path.write_text(source, encoding="utf-8")
+          print(f"Assembled {out_path} with final analytical sections")
+          PY
+          test -s "$ASSEMBLED_SOURCE"
 
       - name: Locate Chrome
         id: chrome
@@ -57,7 +92,7 @@ jobs:
             --allow-file-access-from-files \
             --no-pdf-header-footer \
             --print-to-pdf="$GITHUB_WORKSPACE/$BODY_PDF" \
-            "file://$GITHUB_WORKSPACE/report/source.html"
+            "file://$GITHUB_WORKSPACE/$ASSEMBLED_SOURCE"
           "$CHROME" \
             --headless=new \
             --no-sandbox \
@@ -115,17 +150,17 @@ jobs:
           set -euo pipefail
           git config user.name "M. D. V."
           git config user.email "232046078+Michel-DV@users.noreply.github.com"
-          git add "$PDF_PATH" report/SHA256SUMS.txt
+          git add "$PDF_PATH" report/SHA256SUMS.txt "$ASSEMBLED_SOURCE"
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
-            git commit -m "release: repair SolarWinds PDF cover"
+            git commit -m "release: publish final SolarWinds case study v1.1.0"
             git push origin HEAD:main
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: Create or refresh v1.0.0 release
+      - name: Create or refresh v1.1.0 release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -133,13 +168,13 @@ jobs:
           set -euo pipefail
           git fetch origin main --tags
           TARGET_SHA=$(git rev-parse origin/main)
-          if gh release view v1.0.0 >/dev/null 2>&1; then
-            gh release upload v1.0.0 "$PDF_PATH#SolarWinds Supply-Chain Case Study PDF" --clobber
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "$PDF_PATH#SolarWinds Supply-Chain Case Study PDF" --clobber
           else
-            gh release create v1.0.0 \
+            gh release create "$RELEASE_TAG" \
               "$PDF_PATH#SolarWinds Supply-Chain Case Study PDF" \
               --target "$TARGET_SHA" \
-              --title "SolarWinds Supply-Chain Case Study - v1.0.0" \
+              --title "SolarWinds Supply-Chain Case Study - v1.1.0" \
               --notes-file RELEASE_NOTES.md
           fi
 
@@ -147,11 +182,12 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## SolarWinds publication"
+            echo "## SolarWinds publication — final analytical edition"
             echo
             echo "- PDF: \`$PDF_PATH\`"
-            echo "- Release: \`v1.0.0\`"
+            echo "- Release: \`$RELEASE_TAG\`"
             echo "- SHA-256: \`$(cut -d' ' -f1 report/SHA256SUMS.txt)\`"
             echo "- Author: \`@Michel-DV\`"
-            echo "- Cover: dedicated full-page vector cover"
+            echo "- Added: trust-path reconstruction, detection hypotheses, Red Team research notes"
+            echo "- Status: final analytical edition"
           } >> "$GITHUB_STEP_SUMMARY"
