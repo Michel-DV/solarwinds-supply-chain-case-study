@@ -7,10 +7,12 @@
 
 **When trust became the attack surface.**
 
-[![Release](https://img.shields.io/badge/release-v1.0.0-2ea44f?style=for-the-badge)](https://github.com/Michel-DV/solarwinds-supply-chain-case-study/releases/tag/v1.0.0)
+[![Release](https://img.shields.io/badge/release-v1.1.0-2ea44f?style=for-the-badge)](https://github.com/Michel-DV/solarwinds-supply-chain-case-study/releases/tag/v1.1.0)
 [![PDF](https://img.shields.io/badge/report-PDF-D92332?style=for-the-badge)](report/SolarWinds_Supply_Chain_Case_Study_Michel-DV.pdf)
 [![License](https://img.shields.io/badge/license-CC%20BY--NC--ND%204.0-0B6E99?style=for-the-badge)](LICENSE)
 [![Author](https://img.shields.io/badge/author-%40Michel--DV-37454F?style=for-the-badge)](https://github.com/Michel-DV)
+
+**CASE-001 · Final analytical edition**
 
 </div>
 
@@ -22,18 +24,26 @@ This repository contains a technical reconstruction of the **SolarWinds Orion so
 
 The report follows the attack from the compromise of the SolarWinds build environment through **SUNSPOT**, the insertion and distribution of **SUNBURST**, selective victim promotion, post-exploitation, identity abuse, cloud access, incident response, and the defensive lessons that reshaped modern software-supply-chain security.
 
-It is written as a **case study for security practitioners, red teamers, incident responders, detection engineers, threat researchers, and students**. The goal is not merely to list IOCs, but to examine the trust relationships that made the operation possible.
+Version **1.1.0** adds an original analytical layer focused on the trust transitions that made the campaign strategically effective: build control plane → signed artifact → privileged management context → identity conversion → cloud/data access.
 
 > **Core lesson:** a valid signature proves who signed an artifact. It does not prove that the build pipeline producing that artifact was trustworthy.
 
 ## Read the report
 
 **[Open the report in the repository →](report/SolarWinds_Supply_Chain_Case_Study_Michel-DV.pdf)**  
-**[Download the v1.0.0 release asset →](https://github.com/Michel-DV/solarwinds-supply-chain-case-study/releases/download/v1.0.0/SolarWinds_Supply_Chain_Case_Study_Michel-DV.pdf)**
-
-The published report includes source citations, historical indicators, MITRE ATT&CK mapping, remediation guidance, software-supply-chain control analysis, and a dedicated Red Team / Research Lessons section.
+**[Download the v1.1.0 release asset →](https://github.com/Michel-DV/solarwinds-supply-chain-case-study/releases/download/v1.1.0/SolarWinds_Supply_Chain_Case_Study_Michel-DV.pdf)**
 
 Integrity check: [`report/SHA256SUMS.txt`](report/SHA256SUMS.txt)
+
+## What changed in v1.1.0
+
+The final analytical edition adds three dedicated sections:
+
+- **Attack-path reconstruction through trust boundaries** — explains where control is converted from build access into signed distribution, privileged execution, identity access and cloud reach.
+- **Detection hypotheses** — maps each phase to realistic telemetry questions across CI/CD, DNS, endpoint, identity and cloud logging.
+- **Red Team research notes** — translates the campaign into safe, authorized emulation objectives without reproducing a real third-party supply-chain compromise.
+
+The goal is to move the report beyond incident summary and toward a reusable model for **threat research, purple teaming, detection engineering and trust-boundary assessment**.
 
 ## Attack chain at a glance
 
@@ -78,16 +88,17 @@ flowchart LR
 12. Representative **MITRE ATT&CK** mapping
 13. Post-SolarWinds defensive architecture
 14. Red Team / Research lessons and study questions
-15. Common myths, historical indicators, glossary and primary sources
+15. **Original analysis — trust-boundary attack-path reconstruction**
+16. **Original analysis — detection hypotheses**
+17. **Original analysis — safe Red Team research notes**
+18. Common myths, historical indicators, glossary and primary sources
 
 ## Important distinctions
-
-The case is frequently simplified in ways that obscure its real significance:
 
 - **“18,000 organizations were hacked” — inaccurate.** The larger number refers to possible exposure to affected builds, not confirmed follow-on compromise.
 - **SUNSPOT ≠ SUNBURST.** SUNSPOT is associated with manipulation of the SolarWinds build process; SUNBURST is the backdoor delivered downstream in Orion builds.
 - **The source repository and the build pipeline are different trust boundaries.** A clean repository does not guarantee a clean artifact when the builder is compromised.
-- **SUPERNOVA was not “SUNBURST 2.”** CISA assessed SUPERNOVA as a separate malware campaign attributed to a different actor.
+- **SUPERNOVA was not “SUNBURST 2.”** CISA assessed SUPERNOVA as a separate malware campaign associated with a different actor.
 - **Blocking one historical domain is not remediation.** Credentials, tokens, persistence and follow-on tooling can outlive the original Orion foothold.
 
 ## Defensive themes
@@ -103,19 +114,26 @@ The report focuses on controls that raise the cost of this class of operation:
 - deny-by-default egress for management infrastructure
 - long-term DNS, endpoint, identity and cloud telemetry
 - identity tiering and service-principal governance
-- incident-response playbooks that include coordinated identity/cloud eviction
+- coordinated identity/cloud eviction playbooks
 
 ## Reproducible publication
 
-The PDF is **generated by the repository itself** rather than being maintained as an opaque binary-only artifact.
+The PDF is generated by the repository itself rather than maintained as an opaque binary-only artifact.
 
-`report/source.html` contains the publication source and print CSS. The workflow in `.github/workflows/publish-report.yml` renders it with headless Chrome, calculates the SHA-256 digest, commits the generated PDF, and publishes the versioned release asset. Changes to the report source therefore produce a traceable build path from source to publication.
+The publication pipeline combines:
 
-This is intentionally aligned with the lesson at the center of the case study: **trust the build path only when you can account for how the artifact was produced.**
+- `report/source.html` — base incident reconstruction
+- `report/analysis-v1.1.html` — final original analytical sections
+- `report/cover.html` — dedicated A4 cover
+- `.github/workflows/publish-report.yml` — deterministic assembly, rendering, checksum and release pipeline
+
+The workflow writes the exact assembled source to `report/source-v1.1.html`, renders the PDF, calculates SHA-256 and publishes the versioned release asset.
+
+This deliberately mirrors the central lesson of the incident: **trust the artifact only when you can account for its build path.**
 
 ## Methodology
 
-The case study prioritizes **primary and first-party technical sources**, including SolarWinds regulatory disclosures, CISA/NSA/FBI guidance, U.S. GAO material, and Mandiant/FireEye technical reporting. Statements in the report distinguish between confirmed facts, vendor estimates, government attribution, and analytical interpretation.
+The case study prioritizes **primary and first-party technical sources**, including SolarWinds regulatory disclosures, CISA/NSA/FBI guidance, U.S. GAO material, and Mandiant/FireEye technical reporting. Statements distinguish between confirmed facts, vendor estimates, government attribution and analytical interpretation.
 
 See [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) and [`docs/REFERENCES.md`](docs/REFERENCES.md).
 
@@ -133,6 +151,9 @@ See [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) and [`docs/REFERENCES.md`](docs
 │   └── REFERENCES.md
 ├── report/
 │   ├── source.html
+│   ├── analysis-v1.1.html
+│   ├── source-v1.1.html
+│   ├── cover.html
 │   ├── SolarWinds_Supply_Chain_Case_Study_Michel-DV.pdf
 │   └── SHA256SUMS.txt
 ├── CHANGELOG.md
@@ -148,8 +169,12 @@ See [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) and [`docs/REFERENCES.md`](docs
 If this case study is useful in research, training, coursework, or internal documentation, please cite the repository or use the included [`CITATION.cff`](CITATION.cff).
 
 **Author:** [@Michel-DV](https://github.com/Michel-DV)  
-**Release:** [v1.0.0](https://github.com/Michel-DV/solarwinds-supply-chain-case-study/releases/tag/v1.0.0)  
+**Release:** [v1.1.0](https://github.com/Michel-DV/solarwinds-supply-chain-case-study/releases/tag/v1.1.0)  
 **Year:** 2026
+
+## Publication status
+
+**CASE-001 is closed at v1.1.0 as the final analytical edition.** Future changes should be limited to factual corrections, broken references or material source updates.
 
 ## License
 
