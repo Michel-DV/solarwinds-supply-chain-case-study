@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SolarWinds Supply-Chain Compromise — Technical Case Study</title>
+<meta name="author" content="Michel-DV (@Michel-DV)">
+<style>
+  @page { size: A4; margin: 18mm 17mm 17mm 17mm; }
+  @page cover { margin: 0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #14212b; background: white; font-size: 9.3pt; line-height: 1.45; }
+  .cover { page: cover; width: 210mm; height: 297mm; position: relative; background: #06101a; color: white; page-break-after: always; overflow: hidden; }
+  .cover img { position: absolute; width: 210mm; height: 100mm; object-fit: cover; top: 0; left: 0; }
+  .cover .shade { position:absolute; inset:75mm 0 0 0; background: linear-gradient(180deg, rgba(6,16,26,0) 0%, #06101a 16%, #06101a 100%); }
+  .cover .content { position:absolute; left:19mm; right:19mm; top:106mm; }
+  .kicker { color:#5cc8ff; font-family:monospace; letter-spacing:2px; font-size:8.5pt; text-transform:uppercase; }
+  .cover h1 { margin:7mm 0 3mm; font-size:29pt; line-height:1.05; letter-spacing:-1px; }
+  .cover h1 span { color:#ff3f4b; }
+  .cover h2 { margin:0; font-size:13.5pt; font-weight:400; color:#c5d8e4; line-height:1.3; }
+  .cover .tagline { margin-top:12mm; padding-left:5mm; border-left:2px solid #ff3f4b; color:#e8f6ff; font-size:12pt; }
+  .cover .meta { position:absolute; left:19mm; right:19mm; bottom:18mm; display:flex; justify-content:space-between; align-items:end; color:#9eb4c1; font-family:monospace; font-size:8pt; }
+  .cover .author { color:#fff; font-family:Arial,sans-serif; font-size:11pt; font-weight:700; }
+  .page { page-break-before: always; }
+  .page:first-of-type { page-break-before: auto; }
+  .section-head { border-bottom: 1px solid #c9d6de; padding-bottom:3mm; margin-bottom:5mm; }
+  h1 { color:#0b1720; font-size:21pt; line-height:1.1; margin:0 0 3mm; }
+  h2 { color:#102b3b; font-size:14.5pt; margin:7mm 0 3mm; }
+  h3 { color:#b92331; font-size:10.5pt; margin:5mm 0 2mm; text-transform:uppercase; letter-spacing:.5px; }
+  p { margin:0 0 3mm; }
+  ul, ol { margin:2mm 0 4mm 5mm; padding-left:5mm; }
+  li { margin:1.2mm 0; }
+  strong { color:#0b1720; }
+  .eyebrow { color:#b92331; font-family:monospace; letter-spacing:1.5px; font-size:8pt; text-transform:uppercase; }
+  .lead { font-size:11pt; color:#2a3b46; line-height:1.55; }
+  .callout { margin:5mm 0; padding:4mm 5mm; background:#eef6fa; border-left:3px solid #158fc7; }
+  .warning { background:#fff0f1; border-left-color:#d42938; }
+  .darkbox { background:#09141e; color:#d9e9f2; padding:5mm; border-radius:2mm; margin:4mm 0; }
+  .darkbox strong { color:white; }
+  .darkbox .mono { color:#69d4ff; }
+  .mono { font-family:"Courier New",monospace; font-size:8.3pt; }
+  table { width:100%; border-collapse:collapse; margin:4mm 0 6mm; font-size:8.2pt; }
+  th { text-align:left; background:#102431; color:white; padding:2.4mm; vertical-align:top; }
+  td { border-bottom:1px solid #d6e0e5; padding:2.3mm; vertical-align:top; }
+  tr:nth-child(even) td { background:#f5f8fa; }
+  .factgrid { display:grid; grid-template-columns:1fr 1fr; gap:3mm; margin:4mm 0; }
+  .fact { border:1px solid #d3e0e7; padding:3.5mm; border-radius:2mm; }
+  .fact b { display:block; color:#b92331; font-size:8pt; text-transform:uppercase; letter-spacing:.5px; margin-bottom:1mm; }
+  .chain { display:grid; grid-template-columns:1fr 18px 1fr; gap:2mm; align-items:center; margin:3mm 0; }
+  .chain .node { border:1px solid #cbd9e0; border-radius:2mm; padding:3mm; min-height:15mm; background:#fbfdfe; }
+  .chain .arrow { text-align:center; color:#d42938; font-weight:bold; font-size:15pt; }
+  .timeline { border-left:2px solid #e03340; margin:4mm 0 4mm 2mm; padding-left:5mm; }
+  .timeline .event { margin-bottom:3.3mm; position:relative; }
+  .timeline .event:before { content:""; position:absolute; left:-6.6mm; top:1.8mm; width:3mm; height:3mm; border-radius:50%; background:#e03340; }
+  .timeline .date { color:#b92331; font-family:monospace; font-weight:bold; }
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:6mm; }
+  .small { font-size:7.8pt; color:#536874; }
+  .source { font-size:7.2pt; color:#50646f; overflow-wrap:anywhere; }
+  .footerline { margin-top:8mm; padding-top:2.5mm; border-top:1px solid #d5dee3; display:flex; justify-content:space-between; color:#70838e; font-size:7.2pt; font-family:monospace; }
+  .badge { display:inline-block; padding:1.2mm 2.3mm; border-radius:4mm; background:#e7f5fb; color:#146b91; margin:0 1mm 1mm 0; font-size:7.5pt; }
+  .badge.red { background:#fdebed; color:#a51f2b; }
+  .avoid-break { break-inside:avoid; page-break-inside:avoid; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <img src="../assets/cover.svg" alt="SolarWinds publication artwork">
+  <div class="shade"></div>
+  <div class="content">
+    <div class="kicker">Threat Research / Incident Reconstruction / v1.1.0</div>
+    <h1>SolarWinds <span>Supply-Chain Compromise</span></h1>
+    <h2>Technical Case Study — Anatomy of a Trusted Update Turned Backdoor</h2>
+    <div class="tagline">When trust became the attack surface.</div>
+  </div>
+  <div class="meta">
+    <div><div class="author">Research & Case Study — @Michel-DV</div><div>github.com/Michel-DV</div></div>
+    <div style="text-align:right">14 September 2026<br>CC BY-NC-ND 4.0</div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head"><div class="eyebrow">Executive Brief</div><h1>1. Incident at a glance</h1></div>
+  <p class="lead">The SolarWinds incident demonstrated a strategic reality that now sits at the center of software-supply-chain security: an attacker does not need to compromise every downstream organization individually if they can compromise the mechanism those organizations already trust to deliver software.</p>
+  <div class="factgrid">
+    <div class="fact"><b>Attack class</b>Software supply-chain compromise / cyber espionage</div>
+    <div class="fact"><b>Primary product</b>SolarWinds Orion Platform</div>
+    <div class="fact"><b>Build implant</b>SUNSPOT</div>
+    <div class="fact"><b>Delivered backdoor</b>SUNBURST / Solorigate</div>
+    <div class="fact"><b>Attributed actor</b>Russian SVR; commonly tracked as APT29 / NOBELIUM</div>
+    <div class="fact"><b>Public discovery</b>December 2020 following FireEye/Mandiant investigation</div>
+  </div>
+  <div class="callout warning"><strong>Do not read “18,000” as “18,000 confirmed compromises.”</strong> SolarWinds disclosed that fewer than 18,000 customers may have installed affected Orion builds. It later estimated that fewer than 100 customers were actually accessed by the threat actor through SUNBURST. The operation used broad distribution as a funnel and selective exploitation as the operational model.</div>
+  <h2>Strategic significance</h2>
+  <p>Orion was a privileged network-management platform deployed inside high-value environments. A malicious component delivered through a legitimate, digitally signed update inherited the trust already granted to SolarWinds software. The compromise therefore bypassed an important psychological and technical control boundary: defenders were not deciding whether to execute unknown code; they were installing an update from a known vendor.</p>
+  <p>The most important lesson is not that code signing “failed.” The signed artifact came from SolarWinds. The deeper failure was upstream: the build process that produced the artifact had been manipulated before signing. Authenticity and integrity were therefore evaluated at the wrong layer.</p>
+  <div class="darkbox"><strong>Core model:</strong> compromise the builder → manipulate the artifact → sign it legitimately → distribute through trusted channels → profile all exposed environments → promote only selected victims → move from malware-centric access to credential- and identity-centric access.</div>
+  <div class="footerline"><span>@Michel-DV | SolarWinds Supply-Chain Case Study</span><span>CC BY-NC-ND 4.0</span></div>
+</section>
+
+<section class="page">
+  <div class="section-head"><div class="eyebrow">Scope & Confidence</div><h1>2. What is known — and what remains uncertain</h1></div>
+  <p>The public record is unusually rich, but it is not complete. SolarWinds, Mandiant/FireEye, CISA, Microsoft, U.S. government agencies and other researchers documented different layers of the campaign. A rigorous reconstruction must keep vendor estimates, government attribution, incident-response observations and analytical inference separate.</p>
+  <table>
+    <tr><th>Statement type</th><th>How it is treated in this report</th></tr>
+    <tr><td><strong>Confirmed</strong></td><td>Directly supported by primary disclosure, first-party technical analysis or official advisory.</td></tr>
+    <tr><td><strong>Estimated</strong></td><td>Scope or count published by an authoritative party but not necessarily independently verified for every victim.</td></tr>
+    <tr><td><strong>Attributed</strong></td><td>Actor attribution published by a government or established threat-intelligence organization.</td></tr>
+    <tr><td><strong>Analytical lesson</strong></td><td>Defensive or offensive-security conclusion derived from the documented tradecraft.</td></tr>
+  </table>
+  <h2>The unresolved initial entry</h2>
+  <p>Public reporting establishes that the attacker gained access to SolarWinds infrastructure before the malicious Orion updates were produced. The exact initial path into SolarWinds has been discussed through several hypotheses, but the public evidence does not support presenting one unverified path as settled fact. The security lesson is stronger when stated without overclaiming: once the actor obtained sufficient access to the build environment, they could manipulate the output of a trusted software factory.</p>
+  <h2>Why Orion was a high-value target</h2>
+  <div class="cols">
+    <div><h3>Privilege</h3><p>Network-management software commonly requires broad visibility and trusted access across infrastructure.</p><h3>Position</h3><p>Orion sat inside enterprise and government networks, often near identity, server and monitoring systems.</p></div>
+    <div><h3>Distribution</h3><p>Vendor updates offered a scalable route into many environments without repeating initial access.</p><h3>Trust</h3><p>Signed vendor binaries and expected network behavior reduced suspicion at installation time.</p></div>
+  </div>
+  <div class="callout"><strong>Red-team interpretation:</strong> supply-chain attack paths are trust-path attacks. The decisive question is not simply “what binary executed?” but “which upstream relationship caused defenders to allow that binary to execute with privilege?”</div>
+  <div class="footerline"><span>@Michel-DV | Scope & Confidence</span><span>2</span></div>
+</section>
+
+<section class="page">
+  <div class="section-head"><div class="eyebrow">Timeline</div><h1>3. Reconstructed campaign chronology</h1></div>
+  <div class="timeline">
+    <div class="event"><div class="date">2019</div><strong>Access to SolarWinds environment.</strong> The actor establishes a foothold sufficient to study and later manipulate the Orion build process.</div>
+    <div class="event"><div class="date">Late 2019</div><strong>Test activity.</strong> Public reporting and SolarWinds investigation describe earlier build manipulation/testing before the main SUNBURST distribution period.</div>
+    <div class="event"><div class="date">February 2020</div><strong>SUNSPOT build implant active.</strong> The implant is associated with monitoring the build process and replacing a legitimate source file at the correct moment so malicious code becomes part of the compiled Orion component.</div>
+    <div class="event"><div class="date">March–June 2020</div><strong>Trojanized Orion updates distributed.</strong> Affected builds containing SUNBURST are signed and delivered through legitimate SolarWinds update infrastructure.</div>
+    <div class="event"><div class="date">2020</div><strong>Selective victim promotion.</strong> SUNBURST performs environment checks, delays execution, beacons through DNS and receives instructions. A small subset of attractive victims is promoted to operational C2 and follow-on access.</div>
+    <div class="event"><div class="date">December 2020</div><strong>Discovery and public disclosure.</strong> FireEye/Mandiant identifies suspicious activity while investigating its own compromise, leading to the SolarWinds connection and rapid government/vendor response.</div>
+    <div class="event"><div class="date">13–14 December 2020</div><strong>Emergency response.</strong> CISA directs U.S. federal civilian agencies to disconnect affected Orion products; SolarWinds files its 8-K disclosure.</div>
+    <div class="event"><div class="date">January–April 2021</div><strong>Technical reconstruction and attribution mature.</strong> Detailed analysis of SUNSPOT, SUNBURST, identity/cloud tradecraft and post-exploitation is published. U.S. authorities attribute the operation to the Russian SVR.</div>
+  </div>
+  <h2>Campaign design: patience over speed</h2>
+  <p>The operation rewarded stealth. SUNBURST used a deliberate delay before initiating network activity, performed checks to avoid unwanted execution conditions, and relied on staged victim selection rather than immediately deploying noisy tooling everywhere. This created a separation between mass delivery and targeted exploitation.</p>
+  <div class="callout warning"><strong>Operational insight:</strong> broad exposure can coexist with narrow hands-on-keyboard activity. Counting infected artifacts alone therefore overstates confirmed compromise while simultaneously understating the seriousness of the selected intrusions.</div>
+  <div class="footerline"><span>@Michel-DV | Timeline</span><span>3</span></div>
+</section>
+
+<section class="page">
+  <div class="section-head"><div class="eyebrow">Supply Chain</div><h1>4. From build compromise to downstream foothold</h1></div>
+  <div class="chain"><div class="node"><strong>1 — Build environment compromised</strong><br>The actor gains durable access to SolarWinds development/build infrastructure.</div><div class="arrow">→</div><div class="node"><strong>2 — SUNSPOT inserted</strong><br>Build activity is monitored and a legitimate source file is replaced at the correct compilation stage.</div></div>
+  <div class="chain"><div class="node"><strong>3 — Trojanized Orion component compiled</strong><br>Malicious logic becomes part of a normal SolarWinds.Orion.Core.BusinessLayer.dll build output.</div><div class="arrow">→</div><div class="node"><strong>4 — Normal signing/release process</strong><br>The resulting software is legitimately signed and packaged as an Orion update.</div></div>
+  <div class="chain"><div class="node"><strong>5 — Customers install trusted update</strong><br>Organizations deploy the affected build through the ordinary update path.</div><div class="arrow">→</div><div class="node"><strong>6 — SUNBURST activates selectively</strong><br>Dormancy, reconnaissance, DNS beaconing and C2 allow the actor to decide which environments merit further access.</div></div>
+  <h2>Why the build layer matters</h2>
+  <p>SolarWinds reported that its investigation found malicious code introduced during the automated build process rather than committed directly to the source-code repository. That distinction matters. Repository review, branch protection and source integrity can all be correct while the final artifact is wrong if the builder is compromised after source review but before signing.</p>
+  <table>
+    <tr><th>Control</th><th>What it proves</th><th>What it does not prove</th></tr>
+    <tr><td>Source review</td><td>Reviewed repository content appears legitimate.</td><td>The build worker used only that content and was not tampered with.</td></tr>
+    <tr><td>Code signing</td><td>The artifact was signed by the expected signing identity.</td><td>The artifact was produced by a trustworthy build path.</td></tr>
+    <tr><td>Hash verification</td><td>The downloaded artifact matches the published hash.</td><td>The published artifact itself is benign.</td></tr>
+    <tr><td>Vendor update channel</td><td>The update arrived through an expected distribution mechanism.</td><td>The upstream producer was uncompromised.</td></tr>
+  </table>
+  <div class="darkbox"><strong>Defensive requirement:</strong> treat <span class="mono">source → builder → dependencies → signing → release → distribution</span> as one continuous integrity chain. Attestation must cover the path, not just the endpoint artifact.</div>
+  <div class="footerline"><span>@Michel-DV | Supply-Chain Anatomy</span><span>4</span></div>
+</section>
+
+<section class="page">
+  <div class="section-head"><div class="eyebrow">Malware Analysis</div><h1>5. SUNSPOT — manipulating the software factory</h1></div>
+  <p>SUNSPOT is the component associated with the SolarWinds build-environment manipulation. Its role was fundamentally different from the downstream SUNBURST backdoor: SUNSPOT existed to influence what SolarWinds built; SUNBURST existed to provide covert access once customers installed the altered update.</p>
+  <h2>Behavioral model</h2>
+  <ol>
+    <li><strong>Persist inside the build environment.</strong> The implant runs with access sufficient to observe build orchestration.</li>
+    <li><strong>Monitor for the target build process.</strong> It waits for the expected compilation conditions rather than modifying every build indiscriminately.</li>
+    <li><strong>Replace the targeted source file at the correct moment.</strong> A malicious variant is introduced for compilation.</li>
+    <li><strong>Preserve build reliability.</strong> Operational errors that break production would increase the chance of discovery, so the attacker’s design prioritizes normal-looking output and build continuity.</li>
+    <li><strong>Allow the legitimate pipeline to do the rest.</strong> Compilation, signing, packaging and release transform the attacker’s modification into trusted vendor software.</li>
+  </ol>
+  <div class="callout"><strong>Why SUNSPOT is the strategic center of gravity:</strong> once the attacker could reliably influence the builder, every downstream control that trusted the vendor’s release process became part of the attacker’s delivery infrastructure.</div>
+  <h2>SUNSPOT vs. SUNBURST</h2>
+  <table>
+    <tr><th></th><th>SUNSPOT</th><th>SUNBURST</th></tr>
+    <tr><td><strong>Location</strong></td><td>SolarWinds build environment</td><td>Downstream customer systems running affected Orion builds</td></tr>
+    <tr><td><strong>Purpose</strong></td><td>Inject malicious code into the build output</td><td>Establish covert victim-side access and selection</td></tr>
+    <tr><td><strong>Audience</strong></td><td>The software factory</td><td>Potential downstream victims</td></tr>
+    <tr><td><strong>Operational value</strong></td><td>Scalable trusted distribution</td><td>Reconnaissance, C2 and access brokerage</td></tr>
+  </table>
+  <div class="footerline"><span>@Michel-DV | SUNSPOT</span><span>5</span></div>
+</section>
+
+<section class="page">
+  <div class="section-head"><div class="eyebrow">Backdoor</div><h1>6. SUNBURST — stealth, profiling and victim selection</h1></div>
+  <p>SUNBURST was embedded in a legitimate Orion component and inherited the execution context of trusted SolarWinds software. Its behavior was designed to reduce immediate detection, learn enough about the environment to support selection, and communicate through infrastructure that blended into ordinary enterprise traffic.</p>
+  <h2>Key technical characteristics</h2>
+  <div class="cols">
+    <div>
+      <h3>Dormancy</h3><p>A substantial delay before network activity reduced the correlation between update installation and malicious behavior.</p>
+      <h3>Environment checks</h3><p>The malware examined host and process conditions and attempted to avoid environments likely to expose or disrupt the operation.</p>
+      <h3>DNS-centric first stage</h3><p>Victim information was encoded into DNS lookups under attacker-controlled infrastructure, creating a low-volume discovery and selection channel.</p>
+    </div>
+    <div>
+      <h3>Staged C2</h3><p>Selected victims could be directed toward additional command-and-control infrastructure instead of treating every infected environment equally.</p>
+      <h3>Legitimate host process</h3><p>Execution within the Orion software context made process-based trust assumptions less useful.</p>
+      <h3>Operational restraint</h3><p>The actor minimized noisy actions until an environment had been evaluated for value.</p>
+    </div>
+  </div>
+  <div class="darkbox"><strong>Detection lesson:</strong> “signed,” “vendor-owned,” and “expected process name” are context, not verdicts. Behavioral analytics must still evaluate outbound communication, parent/child relationships, unusual DNS patterns, credential use and identity events.</div>
+  <h2>The selection funnel</h2>
+  <table>
+    <tr><th>Stage</th><th>Population</th><th>Attacker decision</th></tr>
+    <tr><td>Affected build</td><td>Potentially thousands of installations</td><td>Observe environment while maintaining low visibility.</td></tr>
+    <tr><td>DNS beaconing</td><td>Hosts that activate and communicate</td><td>Identify organizational/network characteristics.</td></tr>
+    <tr><td>Promoted victim</td><td>Small, high-value subset</td><td>Move to operational C2 and follow-on access.</td></tr>
+    <tr><td>Hands-on intrusion</td><td>Selected targets</td><td>Acquire credentials, expand access, collect and persist.</td></tr>
+  </table>
+  <div class="footerline"><span>@Michel-DV | SUNBURST</span><span>6</span></div>
+</section>
+
+<section class="page">
+  <div class="section-head"><div class="eyebrow">Post-Exploitation</div><h1>7. Beyond SUNBURST: moving from malware to identity</h1></div>
+  <p>SUNBURST should not be understood as the entire intrusion set. In promoted environments the actor could deploy additional tooling and, more importantly, transition toward valid credentials, remote access, cloud identities and living-off-the-land techniques. Once that transition occurred, the original Orion foothold was no longer the only persistence or access problem.</p>
+  <h2>Follow-on tooling</h2>
+  <p>Public reporting associated the campaign with follow-on loaders including <strong>TEARDROP</strong> and <strong>RAINDROP</strong>, as well as Cobalt Strike components in some environments. Tooling varied by victim, which is precisely why a response strategy based only on one malware family or one hash was insufficient.</p>
+  <h2>Operational patterns that matter to defenders</h2>
+  <ul>
+    <li>Credential acquisition and use of legitimate accounts.</li>
+    <li>Remote services and administrative mechanisms that resemble normal operator behavior.</li>
+    <li>Lateral movement toward identity, email, management and other high-value systems.</li>
+    <li>Cloud access that can persist independently from the original on-premises Orion server.</li>
+    <li>Creation or abuse of service principals, applications, tokens or federation relationships where the victim architecture permits it.</li>
+    <li>Careful use of infrastructure and operational timing intended to reduce correlation across victims.</li>
+  </ul>
+  <div class="callout warning"><strong>Incident-response consequence:</strong> deleting SUNBURST or patching Orion is not equivalent to eviction. If follow-on access produced valid credentials, federation-signing capability, service-principal permissions or other durable identity paths, remediation must coordinate endpoint, Active Directory and cloud actions.</div>
+  <h2>Identity as the long-term objective</h2>
+  <p>Management software can provide a privileged beachhead, but identity systems provide reach. A sophisticated actor benefits from trading malware-based access for access that uses credentials and tokens accepted by the victim’s own security model. This reduces dependence on the original implant and complicates forensic scoping.</p>
+  <div class="footerline"><span>@Michel-DV | Post-Exploitation</span><span>7</span></div>
+</section>
+
+<section class="page">
+  <div class="section-head"><div class="eyebrow">Identity & Cloud</div><h1>8. Active Directory, federation and M365 implications</h1></div>
+  <p>The SolarWinds response highlighted a recurring problem in hybrid enterprise incidents: compromise can cross the boundary between on-premises administrative systems and cloud identity. Defenders therefore need to understand not just where code ran, but which identities, credentials and trust anchors were reachable from the compromised environment.</p>
+  <table>
+    <tr><th>Area</th><th>Risk to investigate</th><th>Response priority</th></tr>
+    <tr><td>Privileged AD accounts</td><td>Stolen credentials, abnormal authentication, lateral movement</td><td>Reset/rotate in a controlled sequence after scoping persistence</td></tr>
+    <tr><td>Federation / token signing</td><td>Ability to mint or abuse trusted authentication tokens</td><td>Rotate signing material and validate federation configuration</td></tr>
+    <tr><td>Cloud applications</td><td>Unexpected credentials, consent grants, service-principal permissions</td><td>Inventory, revoke and re-establish trusted application state</td></tr>
+    <tr><td>Mail / collaboration</td><td>Mailbox access, collection, forwarding or application-based access</td><td>Review audit logs and high-value accounts over the full retention window</td></tr>
+    <tr><td>Remote access</td><td>Legitimate VPN/RDP/admin use by the actor</td><td>Correlate identity, network and endpoint telemetry</td></tr>
+  </table>
+  <h2>Why coordinated eviction matters</h2>
+  <p>Resetting one credential too early can alert the actor while leaving another persistence path intact. Mature incident response therefore plans an eviction window: understand access paths, prepare clean administrative identities, rotate credentials and trust material, remove persistence, block known infrastructure, rebuild where necessary and monitor for re-entry.</p>
+  <div class="darkbox"><strong>Architecture lesson:</strong> tier administrative identities and prevent monitoring/build/management infrastructure from becoming an easy stepping stone into the organization’s identity control plane.</div>
+  <div class="footerline"><span>@Michel-DV | Identity & Cloud</span><span>8</span></div>
+</section>
+
+<section class="page">
+  <div class="section-head"><div class="eyebrow">Detection Engineering</div><h1>9. Hunting and detection opportunities</h1></div>
+  <p>Static indicators played an important role in emergency response, but the enduring value of the case lies in behavior and telemetry. Historical domains and hashes age quickly; the underlying attack logic remains relevant.</p>
+  <h2>Telemetry priorities</h2>
+  <table>
+    <tr><th>Telemetry</th><th>What to hunt for</th></tr>
+    <tr><td>DNS</td><td>Historical queries associated with Orion hosts, unusual encoded subdomains, low-frequency beaconing and resolver records retained across the exposure period.</td></tr>
+    <tr><td>Proxy / firewall</td><td>Unexpected outbound communication from management servers, especially destinations or patterns inconsistent with normal vendor behavior.</td></tr>
+    <tr><td>EDR / process</td><td>Unusual child processes, memory activity or follow-on execution from trusted management-service contexts.</td></tr>
+    <tr><td>Identity</td><td>Privileged account use from unusual hosts, token anomalies, new credentials, service-principal changes, anomalous remote logons.</td></tr>
+    <tr><td>Cloud audit</td><td>Application consent, role changes, mailbox access and token use that cannot be explained by normal administration.</td></tr>
+    <tr><td>Build / CI</td><td>Unexpected worker modifications, source/output mismatch, anomalous process injection, signing requests not traceable to approved provenance.</td></tr>
+  </table>
+  <h2>Detection design principles</h2>
+  <ul>
+    <li><strong>Baseline privileged infrastructure separately.</strong> Management servers deserve stricter egress expectations than ordinary endpoints.</li>
+    <li><strong>Retain enough history.</strong> Supply-chain campaigns can be discovered months after initial exposure.</li>
+    <li><strong>Correlate across layers.</strong> DNS alone may be ambiguous; DNS + Orion host + identity anomalies is much stronger.</li>
+    <li><strong>Do not exempt trusted software from behavior analytics.</strong> Signed binaries can still become execution containers for malicious behavior.</li>
+    <li><strong>Preserve forensic evidence before destructive remediation.</strong> Rebuilding too early can erase the trail needed to determine whether the actor moved beyond Orion.</li>
+  </ul>
+  <div class="callout"><strong>High-value detection question:</strong> what outbound destinations, child processes and identity actions are acceptable for each privileged management platform? “It is a trusted server” should produce a narrower baseline, not a wider exemption.</div>
+  <div class="footerline"><span>@Michel-DV | Detection Engineering</span><span>9</span></div>
+</section>
+
+<section class="page">
+  <div class="section-head"><div class="eyebrow">Impact & Response</div><h1>10. Exposure, compromise and coordinated remediation</h1></div>
+  <h2>Understanding the impact funnel</h2>
+  <p>The public narrative often collapses four different states into one number: customer of SolarWinds, installer of an affected build, host that communicated through SUNBURST, and organization selected for follow-on compromise. Those states are operationally different and should be reported separately.</p>
+  <table>
+    <tr><th>State</th><th>Meaning</th><th>Response implication</th></tr>
+    <tr><td>Affected product/customer</td><td>Potential exposure based on version/build</td><td>Identify installations and preserve logs</td></tr>
+    <tr><td>SUNBURST execution</td><td>Malicious component ran</td><td>Treat host and surrounding trust relationships as suspect</td></tr>
+    <tr><td>Actor-selected victim</td><td>Evidence of operational C2 / follow-on access</td><td>Escalate to full incident response and identity/cloud scoping</td></tr>
+    <tr><td>Confirmed post-exploitation</td><td>Hands-on activity, credentials or persistence beyond Orion</td><td>Coordinated eviction, rebuild and long-term monitoring</td></tr>
+  </table>
+  <h2>Recommended response sequence</h2>
+  <ol>
+    <li>Identify affected Orion versions and isolate or remove them according to authoritative guidance.</li>
+    <li>Preserve endpoint, DNS, proxy, identity, cloud and remote-access logs for the entire possible exposure window.</li>
+    <li>Hunt for evidence that the actor moved from the Orion process into additional tooling or valid-account activity.</li>
+    <li>Scope privileged identities, federation, application credentials and cloud permissions.</li>
+    <li>Prepare clean administrative infrastructure and an eviction plan before rotating critical secrets.</li>
+    <li>Rebuild compromised high-trust systems rather than assuming malware deletion restores trust.</li>
+    <li>Increase monitoring after eviction for re-entry through credentials or persistence missed during scoping.</li>
+  </ol>
+  <div class="callout warning"><strong>Key distinction:</strong> containment stops current activity; eradication removes known artifacts; eviction removes the actor’s viable access paths. SolarWinds-class incidents require all three.</div>
+  <div class="footerline"><span>@Michel-DV | Impact & Response</span><span>10</span></div>
+</section>
+
+<section class="page">
+  <div class="section-head"><div class="eyebrow">MITRE ATT&CK</div><h1>11. Representative technique mapping</h1></div>
+  <p class="small">This mapping is representative rather than exhaustive. Follow-on tradecraft differed by victim and evolved after the initial SUNBURST access.</p>
+  <table>
+    <tr><th>Tactic / theme</th><th>Representative technique</th><th>SolarWinds relevance</th></tr>
+    <tr><td>Initial Access</td><td>T1195 — Supply Chain Compromise</td><td>Compromised software build/update path delivered malicious code through trusted vendor distribution.</td></tr>
+    <tr><td>Execution</td><td>T1059 — Command and Scripting Interpreter</td><td>Follow-on operations used native scripting/command mechanisms where appropriate.</td></tr>
+    <tr><td>Persistence / Defense Evasion</td><td>T1078 — Valid Accounts</td><td>Stolen or abused identities can outlive the original malware foothold.</td></tr>
+    <tr><td>Discovery</td><td>T1082 / T1016</td><td>System and network characteristics contributed to environmental awareness and victim selection.</td></tr>
+    <tr><td>Command & Control</td><td>T1071.004 — DNS</td><td>DNS was central to initial SUNBURST beaconing and selection logic.</td></tr>
+    <tr><td>Command & Control</td><td>T1071.001 — Web Protocols</td><td>HTTP(S)-based communications blended with expected enterprise traffic.</td></tr>
+    <tr><td>Lateral Movement</td><td>T1021 — Remote Services</td><td>Selected intrusions could use legitimate remote administration paths.</td></tr>
+    <tr><td>Credential Access</td><td>T1555 / related credential theft</td><td>Credential acquisition supported durable, legitimate-looking access.</td></tr>
+    <tr><td>Collection</td><td>T1114 — Email Collection</td><td>High-value cloud/email access was relevant in government/enterprise espionage objectives.</td></tr>
+    <tr><td>Defense Evasion</td><td>T1036 — Masquerading</td><td>Trusted vendor context and legitimate infrastructure complicated detection.</td></tr>
+  </table>
+  <div>
+    <span class="badge red">T1195 Supply Chain</span><span class="badge">T1078 Valid Accounts</span><span class="badge">T1071.004 DNS</span><span class="badge">T1021 Remote Services</span><span class="badge">T1114 Email Collection</span>
+  </div>
+  <h2>ATT&CK is a map, not the incident</h2>
+  <p>Technique IDs help normalize behavior across tooling, but they should not replace sequence and trust analysis. The defining characteristic of SolarWinds was not any individual post-exploitation technique; it was the actor’s ability to enter through a signed, trusted supply-chain artifact and then selectively convert that access into conventional espionage tradecraft.</p>
+  <div class="footerline"><span>@Michel-DV | ATT&CK Mapping</span><span>11</span></div>
+</section>
+
+<section class="page">
+  <div class="section-head"><div class="eyebrow">Defensive Architecture</div><h1>12. Controls that raise the cost of a SolarWinds-class operation</h1></div>
+  <table>
+    <tr><th>Layer</th><th>Priority controls</th></tr>
+    <tr><td><strong>CI/CD identity</strong></td><td>Short-lived workload identity, least privilege, MFA for human administration, no shared long-lived credentials, strict separation between source/build/signing roles.</td></tr>
+    <tr><td><strong>Build isolation</strong></td><td>Ephemeral workers, hardened golden images, minimal network access, immutable infrastructure, independent monitoring of the build control plane.</td></tr>
+    <tr><td><strong>Provenance</strong></td><td>Signed build attestations, traceability from reviewed source to artifact, reproducible or independently verified builds where practical.</td></tr>
+    <tr><td><strong>Signing</strong></td><td>Hardware-backed or isolated signing services, policy-bound signing requests, separation from general build hosts, audit logs for every signature.</td></tr>
+    <tr><td><strong>Release</strong></td><td>Immutable artifacts, signed manifests, independent verification before promotion, controlled update publishing.</td></tr>
+    <tr><td><strong>Enterprise egress</strong></td><td>Deny-by-default or tightly baselined outbound access from privileged management servers; DNS/proxy logging with long retention.</td></tr>
+    <tr><td><strong>Identity</strong></td><td>Admin tiering, service-principal governance, token/federation monitoring, separation of management platforms from identity control-plane privilege.</td></tr>
+    <tr><td><strong>Response readiness</strong></td><td>Preplanned coordinated eviction, clean admin paths, credential rotation playbooks, preserved telemetry across endpoint/network/cloud.</td></tr>
+  </table>
+  <h2>What changed after SolarWinds</h2>
+  <p>The incident accelerated industry attention toward software provenance, secure build systems, SBOMs, artifact attestation and formal software-supply-chain frameworks. Those controls are useful only when they reflect actual trust boundaries. An SBOM can describe components while a compromised builder still changes the artifact; a signature can authenticate a release while a compromised signing path legitimizes malicious output.</p>
+  <div class="darkbox"><strong>Design principle:</strong> no single control should be able to assert “this release is trusted” without independent evidence from adjacent stages. High-assurance pipelines need separation of duties plus verifiable provenance.</div>
+  <div class="footerline"><span>@Michel-DV | Defensive Architecture</span><span>12</span></div>
+</section>
+
+<section class="page">
+  <div class="section-head"><div class="eyebrow">Red Team / Research Lessons</div><h1>13. What this case teaches offensive and defensive practitioners</h1></div>
+  <h2>For Red Teams</h2>
+  <ul>
+    <li><strong>Model trust paths, not only host vulnerabilities.</strong> CI/CD, package registries, deployment systems, management platforms and identity bridges can have a blast radius far larger than an individual endpoint.</li>
+    <li><strong>Test detection on trusted processes.</strong> Defenders may over-allow vendor agents. Emulations should evaluate whether behavioral controls still trigger when activity originates from an approved management process.</li>
+    <li><strong>Measure the privilege of software factories.</strong> Build workers and signing systems often combine code execution, secrets and distribution capability.</li>
+    <li><strong>Emulate victim selection and restraint.</strong> A realistic advanced operation does not need to detonate every capability everywhere. Selective promotion is a useful way to test whether defenders can correlate weak signals.</li>
+    <li><strong>Include identity/cloud follow-through.</strong> The meaningful question is whether initial access can be converted into durable access through the organization’s trust fabric.</li>
+  </ul>
+  <h2>For Detection / IR Teams</h2>
+  <ul>
+    <li>Maintain historical telemetry long enough to reconstruct delayed-discovery campaigns.</li>
+    <li>Define expected egress for privileged management servers and CI systems.</li>
+    <li>Build response plans that rotate identity and trust material in a coordinated eviction window.</li>
+    <li>Track artifact provenance independently from code signing.</li>
+    <li>Assume that a trusted vendor process can become an adversary-controlled execution context.</li>
+  </ul>
+  <h2>Study questions</h2>
+  <ol>
+    <li>If an attacker compromises your build worker but never commits malicious source, which controls detect the change?</li>
+    <li>Can your signing service prove what source and dependencies produced the artifact it is asked to sign?</li>
+    <li>How long can you retrospectively query DNS, identity and cloud audit logs?</li>
+    <li>Which management platforms can reach your identity control plane, and with what privilege?</li>
+    <li>Could you rotate federation/token-signing material without losing administrative access during an incident?</li>
+  </ol>
+  <div class="callout"><strong>Research takeaway:</strong> SolarWinds is a study in asymmetry. A carefully positioned compromise upstream allowed one actor to inherit the reach, reputation and distribution machinery of a legitimate software vendor.</div>
+  <div class="footerline"><span>@Michel-DV | Red Team & Research</span><span>13</span></div>
+</section>
+
+<section class="page">
+  <div class="section-head"><div class="eyebrow">Original Analysis</div><h1>14. Attack-path reconstruction through trust boundaries</h1></div>
+  <p class="lead">The most useful way to model SolarWinds is not as a linear malware chain, but as a sequence of <strong>trust-boundary conversions</strong>. At each transition, access obtained in one control plane was converted into authority in the next. The malware mattered, but the strategic advantage came from inheriting trust that already existed.</p>
+
+  <table>
+    <tr><th>Trust boundary</th><th>Attacker leverage</th><th>Defender assumption placed at risk</th></tr>
+    <tr><td><strong>Build control plane</strong></td><td>Manipulate what the software factory emits without requiring a visible malicious source-code commit.</td><td>Reviewed source and a controlled repository are sufficient evidence that the release artifact is trustworthy.</td></tr>
+    <tr><td><strong>Signing / release plane</strong></td><td>Allow the modified artifact to move through legitimate signing and vendor distribution.</td><td>A valid vendor signature implies the upstream build path was uncompromised.</td></tr>
+    <tr><td><strong>Customer management plane</strong></td><td>Execute inside an already trusted network-management product with privileged visibility and expected connectivity.</td><td>Approved infrastructure software deserves broader behavioral exemptions than ordinary processes.</td></tr>
+    <tr><td><strong>Enterprise identity plane</strong></td><td>Convert malware-mediated access into valid-account, token, service-principal or federation-based access.</td><td>Removing the original implant restores the security boundary.</td></tr>
+    <tr><td><strong>Cloud / data plane</strong></td><td>Use identity-derived access to reach email, applications and sensitive information with fewer malware-specific signals.</td><td>Endpoint remediation and IOC blocking are sufficient to end the intrusion.</td></tr>
+  </table>
+
+  <h2>Where the attack changes character</h2>
+  <p>The decisive transition is the move from <strong>artifact-centric access</strong> to <strong>identity-centric access</strong>. Before that point, the defender can still reason primarily about a compromised product, process and network path. After that point, the intrusion can survive as apparently legitimate authentication and administrative activity even if the original Orion component is removed.</p>
+
+  <div class="darkbox"><strong>Analytical model:</strong> build compromise → trusted artifact → privileged execution context → selective victim promotion → identity conversion → durable enterprise/cloud access. The closer the actor moves toward identity, the less useful a malware-only response becomes.</div>
+
+  <h2>Highest-value defensive choke points</h2>
+  <ul>
+    <li><strong>Before signing:</strong> independently verify provenance between reviewed source, dependencies, build worker and produced artifact.</li>
+    <li><strong>Before deployment:</strong> treat privileged management software as a constrained execution environment, not a blanket trust exception.</li>
+    <li><strong>Before identity conversion:</strong> isolate management systems from federation, tier-zero administration and unrestricted credential material.</li>
+    <li><strong>After suspected promotion:</strong> scope identity and cloud activity immediately instead of waiting for a second malware family to appear.</li>
+  </ul>
+
+  <div class="callout"><strong>Michel-DV analysis:</strong> the operational center of gravity was not SUNBURST itself. It was the sequence of trust relationships that allowed SUNBURST to become progressively less necessary after access was converted into legitimate-looking identity and administrative paths.</div>
+  <div class="footerline"><span>@Michel-DV | Original Analysis — Trust Path</span><span>14</span></div>
+</section>
+
+<section class="page">
+  <div class="section-head"><div class="eyebrow">Original Analysis</div><h1>15. Detection hypotheses: where the campaign could surface</h1></div>
+  <p>These are <strong>detection hypotheses</strong>, not claims that any single rule would have reliably detected the historical operation. Their purpose is to convert the reconstructed attack path into testable telemetry questions that remain useful against future supply-chain intrusions.</p>
+
+  <table>
+    <tr><th>Phase</th><th>Detection hypothesis</th><th>Primary telemetry</th></tr>
+    <tr><td><strong>Build manipulation</strong></td><td>A release artifact differs from what independently rebuilt or provenance-verified inputs should produce, despite no corresponding reviewed source change.</td><td>CI worker audit, artifact hashes, reproducible-build comparison, build attestations, signing request logs</td></tr>
+    <tr><td><strong>Trusted execution</strong></td><td>A privileged management service begins network or process behavior outside its historically narrow operating profile.</td><td>EDR, parent/child process telemetry, proxy/firewall, application baselines</td></tr>
+    <tr><td><strong>Victim selection</strong></td><td>Low-frequency or structured DNS activity from management hosts correlates with previously unseen external infrastructure.</td><td>Long-retention DNS, resolver telemetry, passive DNS, asset role context</td></tr>
+    <tr><td><strong>Promotion / follow-on</strong></td><td>A trusted server becomes the origin of scripting, remote administration or credential use that is unusual for that system's normal role.</td><td>EDR, PowerShell/script logging, remote-service logs, authentication telemetry</td></tr>
+    <tr><td><strong>Identity conversion</strong></td><td>Privileged credentials, application identities or token-related operations appear from hosts and sequences that do not match normal administrative workflows.</td><td>AD authentication, federation logs, IdP audit, service-principal changes, privileged-access telemetry</td></tr>
+    <tr><td><strong>Cloud persistence / collection</strong></td><td>New application access, mailbox activity or cloud role changes occur shortly after suspicious activity on a high-trust on-premises management system.</td><td>M365 / cloud audit, mailbox logs, OAuth consent, role and application audit trails</td></tr>
+  </table>
+
+  <h2>Signal quality improves through correlation</h2>
+  <p>Most individual signals above are weak in isolation. The stronger model is <strong>cross-layer correlation</strong>: a high-trust management host produces unusual DNS, then launches atypical child activity, followed by privileged authentication or cloud changes. Each event may be explainable alone; the ordered sequence is materially harder to dismiss.</p>
+
+  <div class="callout warning"><strong>Historical-data requirement:</strong> delayed discovery changes the economics of detection. If DNS, identity and cloud audit data expire after a few days, defenders can lose the ability to distinguish broad exposure from selected follow-on compromise when the incident is finally understood.</div>
+
+  <h2>Detection engineering test</h2>
+  <p>A useful purple-team exercise is to ask whether a trusted management server can generate each class of signal without being automatically suppressed because of its vendor, signature, service account or asset role. High trust should create a <strong>narrower behavioral envelope</strong>, not a larger blind spot.</p>
+
+  <div class="footerline"><span>@Michel-DV | Original Analysis — Detection Hypotheses</span><span>15</span></div>
+</section>
+
+<section class="page">
+  <div class="section-head"><div class="eyebrow">Original Analysis</div><h1>16. Red Team research notes: what to emulate safely</h1></div>
+  <p class="lead">The useful Red Team lesson is not to reproduce a real third-party supply-chain compromise. It is to emulate the <strong>trust assumptions</strong> the operation exploited, inside an explicitly authorized environment, and measure whether defensive controls still work when activity originates from systems defenders already trust.</p>
+
+  <table>
+    <tr><th>Research objective</th><th>Safe emulation pattern</th><th>Success criterion</th></tr>
+    <tr><td><strong>Trusted-process blind spot</strong></td><td>Run benign test actions from an approved lab management-service context or controlled surrogate process.</td><td>Behavioral controls alert on anomalous activity despite trusted path, signature or asset reputation.</td></tr>
+    <tr><td><strong>Build integrity</strong></td><td>Introduce a controlled difference between reviewed input and lab build output without touching production distribution.</td><td>Independent provenance or reproducibility checks identify the mismatch before release promotion.</td></tr>
+    <tr><td><strong>Signing governance</strong></td><td>Submit a deliberately non-compliant artifact to a test signing path using authorized credentials.</td><td>Policy blocks signing because provenance, requester, build identity or approval chain is incomplete.</td></tr>
+    <tr><td><strong>Selective promotion</strong></td><td>Generate low-noise beacons from multiple lab assets, then activate follow-on simulation only on a designated target.</td><td>Defenders correlate the weak precursor with later activity instead of treating each signal independently.</td></tr>
+    <tr><td><strong>Identity follow-through</strong></td><td>Use pre-created test identities/tokens to simulate movement from a compromised management tier toward a lab identity or cloud control plane.</td><td>Tiering, conditional access and identity telemetry detect or prevent the trust transition.</td></tr>
+  </table>
+
+  <h2>What should not be part of the emulation</h2>
+  <ul>
+    <li>Compromising or modifying a real vendor, public package, update channel or third-party dependency.</li>
+    <li>Publishing poisoned artifacts outside the authorized laboratory or engagement boundary.</li>
+    <li>Using real production signing keys or federation material when equivalent test credentials can validate the control.</li>
+    <li>Leaving persistent access, altered trust relationships or live credentials behind after the exercise.</li>
+  </ul>
+
+  <h2>Research value</h2>
+  <p>This framing separates <strong>capability imitation</strong> from <strong>security-control validation</strong>. A Red Team does not need nation-state access to a software vendor to test the same defensive assumptions: whether trusted infrastructure is over-privileged, whether artifact provenance is independently verified, whether egress from management systems is constrained, and whether identity boundaries stop an initial foothold from becoming durable access.</p>
+
+  <div class="darkbox"><strong>Final Red Team takeaway:</strong> emulate the trust transition, not the geopolitical scale. The strongest exercise is the smallest authorized action that proves whether the same defensive assumption can still be abused.</div>
+  <div class="footerline"><span>@Michel-DV | Original Analysis — Red Team Notes</span><span>16</span></div>
+</section>
+
+<section class="page">
+  <div class="section-head"><div class="eyebrow">Appendix</div><h1>17. Common myths, indicators and terminology</h1></div>
+  <h2>Common myths</h2>
+  <table>
+    <tr><th>Myth</th><th>Correction</th></tr>
+    <tr><td>“18,000 organizations were hacked.”</td><td>Fewer than 18,000 customers may have installed affected builds; that is not the same as confirmed follow-on compromise.</td></tr>
+    <tr><td>“Code signing was bypassed.”</td><td>The malicious build was signed legitimately. The upstream build process had been manipulated.</td></tr>
+    <tr><td>“SUNSPOT and SUNBURST are the same malware.”</td><td>SUNSPOT targeted the build process; SUNBURST was delivered to customers.</td></tr>
+    <tr><td>“Removing Orion removes the actor.”</td><td>Not if follow-on access established credentials, cloud permissions, tokens or other persistence.</td></tr>
+    <tr><td>“SUPERNOVA was another SUNBURST stage.”</td><td>CISA assessed SUPERNOVA as a separate malware campaign associated with a different actor.</td></tr>
+  </table>
+  <h2>Representative historical indicators</h2>
+  <p class="small">For retrospective research only. Historical indicators should not be treated as current threat intelligence without contemporary validation.</p>
+  <div class="darkbox mono">SolarWinds.Orion.Core.BusinessLayer.dll<br>avsvmcloud[.]com<br>SUNBURST / Solorigate<br>SUNSPOT<br>TEARDROP / RAINDROP</div>
+  <h2>Glossary</h2>
+  <table>
+    <tr><td><strong>Build pipeline</strong></td><td>Automated system that transforms source and dependencies into release artifacts.</td></tr>
+    <tr><td><strong>Supply-chain compromise</strong></td><td>Attack on a supplier, dependency or delivery mechanism used to reach downstream targets.</td></tr>
+    <tr><td><strong>Provenance</strong></td><td>Evidence describing where, how and from what inputs an artifact was produced.</td></tr>
+    <tr><td><strong>Victim promotion</strong></td><td>Selection of an exposed environment for deeper hands-on exploitation.</td></tr>
+    <tr><td><strong>Coordinated eviction</strong></td><td>Synchronized removal of malware, credentials, persistence and trust abuse to prevent easy re-entry.</td></tr>
+  </table>
+  <div class="footerline"><span>@Michel-DV | Appendix</span><span>17</span></div>
+</section>
+
+<section class="page">
+  <div class="section-head"><div class="eyebrow">Primary Sources</div><h1>18. Evidence trail</h1></div>
+  <p>This case study prioritizes primary disclosures, official advisories and first-party technical analysis. The repository also maintains a browsable reference index at <span class="mono">docs/REFERENCES.md</span>.</p>
+  <ol class="source">
+    <li>SolarWinds, Form 8-K, 14 Dec 2020 — https://www.sec.gov/Archives/edgar/data/1739942/000162828020017451/swi-20201214.htm</li>
+    <li>SolarWinds, investigative update / SEC filing, 2021 — https://www.sec.gov/Archives/edgar/data/1739942/000173994221000080/swi-20210331.htm</li>
+    <li>Mandiant / FireEye, “Highly Evasive Attacker Leverages SolarWinds Supply Chain…” — https://cloud.google.com/blog/topics/threat-intelligence/evasive-attacker-leverages-solarwinds-supply-chain-compromises-with-sunburst-backdoor/</li>
+    <li>Mandiant, “SUNBURST Additional Technical Details” — https://cloud.google.com/blog/topics/threat-intelligence/sunburst-additional-technical-details/</li>
+    <li>CISA, “Active Exploitation of SolarWinds Software” — https://www.cisa.gov/news-events/alerts/2020/12/13/active-exploitation-solarwinds-software</li>
+    <li>CISA / NSA / FBI, AA21-116A — https://www.cisa.gov/news-events/cybersecurity-advisories/aa21-116a</li>
+    <li>U.S. GAO, GAO-22-104746 — https://www.gao.gov/products/gao-22-104746</li>
+    <li>CISA, “Supply Chain Compromise: Detecting APT Activity from Known TTPs” — https://www.cisa.gov/sites/default/files/publications/Supply_Chain_Compromise_Detecting_APT_Activity_from_known_TTPs.pdf</li>
+    <li>CISA, SUPERNOVA Malware During Incident Response — https://www.cisa.gov/news-events/analysis-reports/ar21-112a</li>
+    <li>Mandiant, UNC2452 merged into APT29 — https://cloud.google.com/blog/topics/threat-intelligence/unc2452-merged-into-apt29/</li>
+    <li>CISA, eviction guidance — https://www.cisa.gov/news-events/news/cisa-releases-eviction-guidance-help-organizations-remove-russian-state-sponsored-threats</li>
+    <li>SolarWinds, investigation update, 11 Jan 2021 — https://www.sec.gov/Archives/edgar/data/1739942/000173994221000015/swi-20210111.htm</li>
+  </ol>
+  <div class="callout"><strong>Attribution note:</strong> the United States publicly attributed the campaign to the Russian Foreign Intelligence Service (SVR). Threat-intelligence naming varies across vendors; APT29 and NOBELIUM are commonly associated with the actor set relevant to this campaign.</div>
+  <h2>Publication metadata</h2>
+  <p><strong>Author:</strong> Michel-DV / @Michel-DV<br><strong>Repository:</strong> github.com/Michel-DV/solarwinds-supply-chain-case-study<br><strong>Version:</strong> 1.1.0<br><strong>Published:</strong> 15 September 2026<br><strong>License:</strong> CC BY-NC-ND 4.0</p>
+  <p class="small">Independent research publication. Not affiliated with or endorsed by SolarWinds, Mandiant, CISA, Microsoft, MITRE or other referenced organizations. Product names and trademarks remain the property of their respective owners.</p>
+  <div class="footerline"><span>© 2026 Michel-DV</span><span>End of report</span></div>
+</section>
+
+</body>
+</html>
