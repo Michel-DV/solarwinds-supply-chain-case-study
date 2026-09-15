@@ -1,0 +1,82 @@
+<section class="page">
+  <div class="section-head"><div class="eyebrow">Original Analysis</div><h1>14. Attack-path reconstruction through trust boundaries</h1></div>
+  <p class="lead">The most useful way to model SolarWinds is not as a linear malware chain, but as a sequence of <strong>trust-boundary conversions</strong>. At each transition, access obtained in one control plane was converted into authority in the next. The malware mattered, but the strategic advantage came from inheriting trust that already existed.</p>
+
+  <table>
+    <tr><th>Trust boundary</th><th>Attacker leverage</th><th>Defender assumption placed at risk</th></tr>
+    <tr><td><strong>Build control plane</strong></td><td>Manipulate what the software factory emits without requiring a visible malicious source-code commit.</td><td>Reviewed source and a controlled repository are sufficient evidence that the release artifact is trustworthy.</td></tr>
+    <tr><td><strong>Signing / release plane</strong></td><td>Allow the modified artifact to move through legitimate signing and vendor distribution.</td><td>A valid vendor signature implies the upstream build path was uncompromised.</td></tr>
+    <tr><td><strong>Customer management plane</strong></td><td>Execute inside an already trusted network-management product with privileged visibility and expected connectivity.</td><td>Approved infrastructure software deserves broader behavioral exemptions than ordinary processes.</td></tr>
+    <tr><td><strong>Enterprise identity plane</strong></td><td>Convert malware-mediated access into valid-account, token, service-principal or federation-based access.</td><td>Removing the original implant restores the security boundary.</td></tr>
+    <tr><td><strong>Cloud / data plane</strong></td><td>Use identity-derived access to reach email, applications and sensitive information with fewer malware-specific signals.</td><td>Endpoint remediation and IOC blocking are sufficient to end the intrusion.</td></tr>
+  </table>
+
+  <h2>Where the attack changes character</h2>
+  <p>The decisive transition is the move from <strong>artifact-centric access</strong> to <strong>identity-centric access</strong>. Before that point, the defender can still reason primarily about a compromised product, process and network path. After that point, the intrusion can survive as apparently legitimate authentication and administrative activity even if the original Orion component is removed.</p>
+
+  <div class="darkbox"><strong>Analytical model:</strong> build compromise → trusted artifact → privileged execution context → selective victim promotion → identity conversion → durable enterprise/cloud access. The closer the actor moves toward identity, the less useful a malware-only response becomes.</div>
+
+  <h2>Highest-value defensive choke points</h2>
+  <ul>
+    <li><strong>Before signing:</strong> independently verify provenance between reviewed source, dependencies, build worker and produced artifact.</li>
+    <li><strong>Before deployment:</strong> treat privileged management software as a constrained execution environment, not a blanket trust exception.</li>
+    <li><strong>Before identity conversion:</strong> isolate management systems from federation, tier-zero administration and unrestricted credential material.</li>
+    <li><strong>After suspected promotion:</strong> scope identity and cloud activity immediately instead of waiting for a second malware family to appear.</li>
+  </ul>
+
+  <div class="callout"><strong>Michel-DV analysis:</strong> the operational center of gravity was not SUNBURST itself. It was the sequence of trust relationships that allowed SUNBURST to become progressively less necessary after access was converted into legitimate-looking identity and administrative paths.</div>
+  <div class="footerline"><span>@Michel-DV | Original Analysis — Trust Path</span><span>14</span></div>
+</section>
+
+<section class="page">
+  <div class="section-head"><div class="eyebrow">Original Analysis</div><h1>15. Detection hypotheses: where the campaign could surface</h1></div>
+  <p>These are <strong>detection hypotheses</strong>, not claims that any single rule would have reliably detected the historical operation. Their purpose is to convert the reconstructed attack path into testable telemetry questions that remain useful against future supply-chain intrusions.</p>
+
+  <table>
+    <tr><th>Phase</th><th>Detection hypothesis</th><th>Primary telemetry</th></tr>
+    <tr><td><strong>Build manipulation</strong></td><td>A release artifact differs from what independently rebuilt or provenance-verified inputs should produce, despite no corresponding reviewed source change.</td><td>CI worker audit, artifact hashes, reproducible-build comparison, build attestations, signing request logs</td></tr>
+    <tr><td><strong>Trusted execution</strong></td><td>A privileged management service begins network or process behavior outside its historically narrow operating profile.</td><td>EDR, parent/child process telemetry, proxy/firewall, application baselines</td></tr>
+    <tr><td><strong>Victim selection</strong></td><td>Low-frequency or structured DNS activity from management hosts correlates with previously unseen external infrastructure.</td><td>Long-retention DNS, resolver telemetry, passive DNS, asset role context</td></tr>
+    <tr><td><strong>Promotion / follow-on</strong></td><td>A trusted server becomes the origin of scripting, remote administration or credential use that is unusual for that system's normal role.</td><td>EDR, PowerShell/script logging, remote-service logs, authentication telemetry</td></tr>
+    <tr><td><strong>Identity conversion</strong></td><td>Privileged credentials, application identities or token-related operations appear from hosts and sequences that do not match normal administrative workflows.</td><td>AD authentication, federation logs, IdP audit, service-principal changes, privileged-access telemetry</td></tr>
+    <tr><td><strong>Cloud persistence / collection</strong></td><td>New application access, mailbox activity or cloud role changes occur shortly after suspicious activity on a high-trust on-premises management system.</td><td>M365 / cloud audit, mailbox logs, OAuth consent, role and application audit trails</td></tr>
+  </table>
+
+  <h2>Signal quality improves through correlation</h2>
+  <p>Most individual signals above are weak in isolation. The stronger model is <strong>cross-layer correlation</strong>: a high-trust management host produces unusual DNS, then launches atypical child activity, followed by privileged authentication or cloud changes. Each event may be explainable alone; the ordered sequence is materially harder to dismiss.</p>
+
+  <div class="callout warning"><strong>Historical-data requirement:</strong> delayed discovery changes the economics of detection. If DNS, identity and cloud audit data expire after a few days, defenders can lose the ability to distinguish broad exposure from selected follow-on compromise when the incident is finally understood.</div>
+
+  <h2>Detection engineering test</h2>
+  <p>A useful purple-team exercise is to ask whether a trusted management server can generate each class of signal without being automatically suppressed because of its vendor, signature, service account or asset role. High trust should create a <strong>narrower behavioral envelope</strong>, not a larger blind spot.</p>
+
+  <div class="footerline"><span>@Michel-DV | Original Analysis — Detection Hypotheses</span><span>15</span></div>
+</section>
+
+<section class="page">
+  <div class="section-head"><div class="eyebrow">Original Analysis</div><h1>16. Red Team research notes: what to emulate safely</h1></div>
+  <p class="lead">The useful Red Team lesson is not to reproduce a real third-party supply-chain compromise. It is to emulate the <strong>trust assumptions</strong> the operation exploited, inside an explicitly authorized environment, and measure whether defensive controls still work when activity originates from systems defenders already trust.</p>
+
+  <table>
+    <tr><th>Research objective</th><th>Safe emulation pattern</th><th>Success criterion</th></tr>
+    <tr><td><strong>Trusted-process blind spot</strong></td><td>Run benign test actions from an approved lab management-service context or controlled surrogate process.</td><td>Behavioral controls alert on anomalous activity despite trusted path, signature or asset reputation.</td></tr>
+    <tr><td><strong>Build integrity</strong></td><td>Introduce a controlled difference between reviewed input and lab build output without touching production distribution.</td><td>Independent provenance or reproducibility checks identify the mismatch before release promotion.</td></tr>
+    <tr><td><strong>Signing governance</strong></td><td>Submit a deliberately non-compliant artifact to a test signing path using authorized credentials.</td><td>Policy blocks signing because provenance, requester, build identity or approval chain is incomplete.</td></tr>
+    <tr><td><strong>Selective promotion</strong></td><td>Generate low-noise beacons from multiple lab assets, then activate follow-on simulation only on a designated target.</td><td>Defenders correlate the weak precursor with later activity instead of treating each signal independently.</td></tr>
+    <tr><td><strong>Identity follow-through</strong></td><td>Use pre-created test identities/tokens to simulate movement from a compromised management tier toward a lab identity or cloud control plane.</td><td>Tiering, conditional access and identity telemetry detect or prevent the trust transition.</td></tr>
+  </table>
+
+  <h2>What should not be part of the emulation</h2>
+  <ul>
+    <li>Compromising or modifying a real vendor, public package, update channel or third-party dependency.</li>
+    <li>Publishing poisoned artifacts outside the authorized laboratory or engagement boundary.</li>
+    <li>Using real production signing keys or federation material when equivalent test credentials can validate the control.</li>
+    <li>Leaving persistent access, altered trust relationships or live credentials behind after the exercise.</li>
+  </ul>
+
+  <h2>Research value</h2>
+  <p>This framing separates <strong>capability imitation</strong> from <strong>security-control validation</strong>. A Red Team does not need nation-state access to a software vendor to test the same defensive assumptions: whether trusted infrastructure is over-privileged, whether artifact provenance is independently verified, whether egress from management systems is constrained, and whether identity boundaries stop an initial foothold from becoming durable access.</p>
+
+  <div class="darkbox"><strong>Final Red Team takeaway:</strong> emulate the trust transition, not the geopolitical scale. The strongest exercise is the smallest authorized action that proves whether the same defensive assumption can still be abused.</div>
+  <div class="footerline"><span>@Michel-DV | Original Analysis — Red Team Notes</span><span>16</span></div>
+</section>
