@@ -9,7 +9,7 @@ authors:
     alias: "@Michel-DV"
     website: "https://github.com/Michel-DV"
 repository-code: "https://github.com/Michel-DV/solarwinds-supply-chain-case-study"
-url: "https://github.com/Michel-DV/solarwinds-supply-chain-case-study/blob/main/report/SolarWinds_Supply_Chain_Case_Study_Michel-DV.pdf"
+url: "https://github.com/Michel-DV/solarwinds-supply-chain-case-study/releases/tag/v1.1.0"
 license: "CC-BY-NC-ND-4.0"
 keywords:
   - SolarWinds
